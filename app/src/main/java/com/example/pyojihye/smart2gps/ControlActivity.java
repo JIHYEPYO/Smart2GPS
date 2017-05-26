@@ -1,14 +1,9 @@
 package com.example.pyojihye.smart2gps;
 
-import android.content.DialogInterface;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -24,10 +19,10 @@ import java.net.Socket;
 import static com.example.pyojihye.smart2gps.Const.ConnectionTrue;
 import static com.example.pyojihye.smart2gps.Const.IP;
 import static com.example.pyojihye.smart2gps.Const.PORT;
-import static com.example.pyojihye.smart2gps.Const.PROTO_DVTYPE_KEY;
 import static com.example.pyojihye.smart2gps.Const.PROTO_DVTYPE;
-import static com.example.pyojihye.smart2gps.Const.PROTO_MSG_TYPE_KEY;
+import static com.example.pyojihye.smart2gps.Const.PROTO_DVTYPE_KEY;
 import static com.example.pyojihye.smart2gps.Const.PROTO_MSGTYPE;
+import static com.example.pyojihye.smart2gps.Const.PROTO_MSG_TYPE_KEY;
 import static com.example.pyojihye.smart2gps.Const.bufferedReader;
 import static com.example.pyojihye.smart2gps.Const.client;
 import static com.example.pyojihye.smart2gps.Const.first;
@@ -38,6 +33,9 @@ import static com.example.pyojihye.smart2gps.Const.printWriter;
  */
 
 public class ControlActivity extends AppCompatActivity {
+
+    private TextView textViewDroneState;
+
     private Button buttonEmergency;
 
     private Button buttonLandTakeOff;
@@ -58,6 +56,9 @@ public class ControlActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
+
+        textViewDroneState = (TextView)findViewById(R.id.textViewDroneState);
+
         buttonEmergency = (Button) findViewById(R.id.buttonEmergency);
 
         buttonLandTakeOff = (Button) findViewById(R.id.buttonLandTakeOff);
@@ -332,16 +333,20 @@ public class ControlActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }
 
         @Override
         protected void onProgressUpdate(Void... values) {
+            boolean type = message.startsWith(PROTO_MSG_TYPE_KEY+"="+PROTO_MSGTYPE.REALTIMEDATA.ordinal());
+            if(type){
+                String gps = message.substring(message.indexOf(PROTO_MSGTYPE.REALTIMEDATA.ordinal())+1,message.indexOf("&&"));
+                String battery = message.substring(message.indexOf("bat")+1,message.indexOf("&&"));
+                String backHomeType = message.substring(message.indexOf("bhtyp")+1,message.indexOf("&&"));
+                String altitude = message.substring(message.indexOf("alt")+1,message.indexOf("&&"));
+
+                textViewDroneState.setText("GPS : "+gps+"\nBattery : "+battery+"\nBHType : "+backHomeType+"\nAltitude"+altitude);
+            }
 
         }
     }

@@ -45,7 +45,7 @@ public class Const {
     ;
 
     public enum PROTO_MSGTYPE {
-        CMD, GPS, IMG, HELLO, PATH
+        CMD, GPS, IMG, HELLO, PATH, STATE, REALTIMEDATA
     }
 
     ;
