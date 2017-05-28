@@ -35,6 +35,7 @@ import static com.example.pyojihye.smart2gps.Const.printWriter;
 public class ControlActivity extends AppCompatActivity {
 
     private TextView textViewDroneState;
+    private TextView textViewRealTimeData;
 
     private Button buttonEmergency;
 
@@ -57,7 +58,8 @@ public class ControlActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
 
-        textViewDroneState = (TextView)findViewById(R.id.textViewDroneState);
+        textViewDroneState = (TextView) findViewById(R.id.textViewDroneState);
+        textViewRealTimeData = (TextView) findViewById(R.id.textViewRealTimeData);
 
         buttonEmergency = (Button) findViewById(R.id.buttonEmergency);
 
@@ -76,6 +78,7 @@ public class ControlActivity extends AppCompatActivity {
 
         ConnectionTrue = false;
         first = false;
+
         ChatOperator chatOperator = new ChatOperator();
         if (ConnectionTrue == false) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
@@ -338,16 +341,23 @@ public class ControlActivity extends AppCompatActivity {
 
         @Override
         protected void onProgressUpdate(Void... values) {
-            boolean type = message.startsWith(PROTO_MSG_TYPE_KEY+"="+PROTO_MSGTYPE.REALTIMEDATA.ordinal());
-            if(type){
-                String gps = message.substring(message.indexOf(PROTO_MSGTYPE.REALTIMEDATA.ordinal())+1,message.indexOf("&&"));
-                String battery = message.substring(message.indexOf("bat")+1,message.indexOf("&&"));
-                String backHomeType = message.substring(message.indexOf("bhtyp")+1,message.indexOf("&&"));
-                String altitude = message.substring(message.indexOf("alt")+1,message.indexOf("&&"));
+            boolean type = message.startsWith(PROTO_MSG_TYPE_KEY + "=REALTIMEDATA");
+            if (type) {
+                String data = message.substring(message.indexOf("%%DATA=") + 7);
+                String droneData[] = data.split("&&");
+                String gps = droneData[0].substring(4);
+                String battery = droneData[1].substring(4);
+                String backHomeType = droneData[2].substring(6);
+                String altitude = droneData[3].substring(4);
 
-                textViewDroneState.setText("GPS : "+gps+"\nBattery : "+battery+"\nBHType : "+backHomeType+"\nAltitude"+altitude);
+                textViewRealTimeData.setText("GPS : " + gps + "\nBattery : " + battery + "%\nBHType : " + backHomeType + "\nAltitude" + altitude);
             }
 
+            boolean type2 = message.startsWith(PROTO_MSG_TYPE_KEY + "=STATE");
+            if (type2) {
+                String data = message.substring(message.indexOf("%%DATA=") + 7);
+                textViewDroneState.setText("Drone's State : " + data);
+            }
         }
     }
 

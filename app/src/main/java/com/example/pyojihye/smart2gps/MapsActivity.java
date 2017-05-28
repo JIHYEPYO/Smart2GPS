@@ -1,8 +1,16 @@
 package com.example.pyojihye.smart2gps;
 
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -14,6 +22,7 @@ import android.support.v7.app.AlertDialog;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -46,6 +55,7 @@ import static com.example.pyojihye.smart2gps.Const.PROTO_DVTYPE_KEY;
 import static com.example.pyojihye.smart2gps.Const.PROTO_MSG_TYPE_KEY;
 import static com.example.pyojihye.smart2gps.Const.PROTO_DVTYPE;
 import static com.example.pyojihye.smart2gps.Const.PROTO_MSGTYPE;
+import static com.example.pyojihye.smart2gps.Const.RUN;
 import static com.example.pyojihye.smart2gps.Const.bufferedReader;
 import static com.example.pyojihye.smart2gps.Const.client;
 import static com.example.pyojihye.smart2gps.Const.first;
@@ -53,16 +63,21 @@ import static com.example.pyojihye.smart2gps.Const.last;
 import static com.example.pyojihye.smart2gps.Const.location;
 import static com.example.pyojihye.smart2gps.Const.marker;
 import static com.example.pyojihye.smart2gps.Const.printWriter;
-import static com.example.pyojihye.smart2gps.Const.start;
+import static com.example.pyojihye.smart2gps.Const.settings;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, LocationListener, GoogleMap.OnMapLongClickListener {
 
     private GoogleMap mMap;
+
     GoogleApiClient mGoogleApiClient;
     LocationRequest mLocationRequest;
+
     Button buttonFlight;
     Button buttonDrone;
     Button buttonStart;
+
+    TextView textViewMapDroneState;
+    TextView textViewMapRealTimeData;
 
     int i;
 
@@ -78,11 +93,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         buttonFlight = (Button) findViewById(R.id.buttonFlight);
         buttonDrone = (Button) findViewById(R.id.buttonDrone);
         buttonStart = (Button) findViewById(R.id.buttonStart);
+        textViewMapDroneState = (TextView) findViewById(R.id.textViewMapDroneState);
+        textViewMapRealTimeData = (TextView) findViewById(R.id.textViewMapRealTimeData);
 
         ConnectionTrue = false;
         first = false;
         last = false;
-        start = false;
+        settings = getSharedPreferences(RUN, MODE_PRIVATE);
         i = 0;
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -98,7 +115,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         buttonDrone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (start) {
+                if (settings.getBoolean("start", true)) {
                     setGpsCurrent(marker.getPosition().latitude, marker.getPosition().longitude);
                 } else {
                     Toast.makeText(MapsActivity.this, R.string.unknown_drone, Toast.LENGTH_LONG).show();
@@ -168,10 +185,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 buildGoogleApiClient();
                 mMap.setOnMapLongClickListener(this);
+
+                if (marker != null) {
+                    MarkerOptions markerOptions = new MarkerOptions()
+                            .position(Dronelocation)
+                            .title(location.toString())
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.drone));
+                    marker = mMap.addMarker(markerOptions);
+                }
             }
         } else {
             buildGoogleApiClient();
             mMap.setOnMapLongClickListener(this);
+
+            if (marker != null) {
+                MarkerOptions markerOptions = new MarkerOptions()
+                        .position(Dronelocation)
+                        .title(location.toString())
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.drone));
+                marker = mMap.addMarker(markerOptions);
+            }
         }
     }
 
@@ -222,12 +255,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    public Bitmap setMarkerDrawable(int number) {
+        int background = R.drawable.initial_background;
+        Bitmap icon = drawTextToBitmap(background, String.valueOf(number));
+        return icon;
+    }
+
+    public Bitmap drawTextToBitmap(int gResId, String gText) {
+        Resources resources = getResources();
+        float scale = resources.getDisplayMetrics().density;
+        Bitmap bitmap = BitmapFactory.decodeResource(resources, gResId);
+        android.graphics.Bitmap.Config bitmapConfig = bitmap.getConfig();
+
+        if (bitmapConfig == null) {
+            bitmapConfig = android.graphics.Bitmap.Config.ARGB_8888;
+        }
+        bitmap = bitmap.copy(bitmapConfig, true);
+        Canvas canvas = new Canvas(bitmap);
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(Color.rgb(255, 255, 255));
+        paint.setTextSize((int) (15 * scale));
+        paint.setShadowLayer(1f, 0f, 1f, Color.BLACK);
+
+        Rect bounds = new Rect();
+        paint.getTextBounds(gText, 0, gText.length(), bounds);
+        int x = (bitmap.getWidth() - bounds.width()) / 2-5;
+        int y = (bitmap.getHeight() + bounds.height()) / 3;
+        canvas.drawText(gText, x, y, paint);
+
+        return bitmap;
+    }
+
     @Override
     public void onMapLongClick(LatLng point) {
         mMap.addMarker(new MarkerOptions()
                 .position(point)
-                .title(point.toString())
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                .title(i + 1 + "번째 지정한 위치")
+                .icon(BitmapDescriptorFactory.fromBitmap(setMarkerDrawable((int)i)))
+                .anchor(0.5f, 0.5f));
         location.add(i, point.latitude + "/" + point.longitude);
         i++;
 
@@ -279,6 +345,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         @Override
         protected void onProgressUpdate(Void... values) {
+            boolean type = message.startsWith(PROTO_MSG_TYPE_KEY + "=REALTIMEDATA");
+            if (type) {
+                String data = message.substring(message.indexOf("%%DATA=") + 7);
+                String droneData[] = data.split("&&");
+                String gps = droneData[0].substring(4);
+                String battery = droneData[1].substring(4);
+                String backHomeType = droneData[2].substring(6);
+                String altitude = droneData[3].substring(4);
+
+                textViewMapRealTimeData.setText("GPS : " + gps + "\nBattery : " + battery + "%\nBHType : " + backHomeType + "\nAltitude" + altitude);
+            }
+
+            boolean type2 = message.startsWith(PROTO_MSG_TYPE_KEY + "=STATE");
+            if (type2) {
+                String data = message.substring(message.indexOf("%%DATA=") + 7);
+                textViewMapDroneState.setText("Drone's State : " + data);
+            }
+
             if (message != null) {
                 StringTokenizer tokens = new StringTokenizer(message);
 
@@ -290,13 +374,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     String longitude = DATA.substring((DATA.indexOf("/")) + 1);
                     Dronelocation = new LatLng(Float.parseFloat(latitude), Float.parseFloat(longitude));
 
-                    if (!start) {
+                    if (!settings.getBoolean("start", true)) {
                         MarkerOptions markerOptions = new MarkerOptions()
                                 .position(Dronelocation)
                                 .title(location.toString())
                                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.drone));
                         marker = mMap.addMarker(markerOptions);
-                        start = true;
+
+                        SharedPreferences.Editor editor = settings.edit();
+                        editor.putBoolean("start", true);
+                        editor.commit();
                     } else {
                         marker.setPosition(Dronelocation);
                     }

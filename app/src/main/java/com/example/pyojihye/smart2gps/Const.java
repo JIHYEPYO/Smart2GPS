@@ -1,5 +1,7 @@
 package com.example.pyojihye.smart2gps;
 
+import android.content.SharedPreferences;
+
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
@@ -14,6 +16,8 @@ import java.util.List;
  */
 
 public class Const {
+    public static final String RUN = "RUN";
+
     public static String IP;
     public static int PORT;
 
@@ -29,7 +33,7 @@ public class Const {
     public static boolean ConnectionTrue;
     public static boolean first;
     public static boolean last;
-    public static boolean start;
+    public static SharedPreferences settings;
 
     public static Socket client;
 

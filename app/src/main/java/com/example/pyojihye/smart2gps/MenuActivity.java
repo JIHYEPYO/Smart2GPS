@@ -37,7 +37,6 @@ import static com.example.pyojihye.smart2gps.Const.last;
 import static com.example.pyojihye.smart2gps.Const.location;
 import static com.example.pyojihye.smart2gps.Const.marker;
 import static com.example.pyojihye.smart2gps.Const.printWriter;
-import static com.example.pyojihye.smart2gps.Const.start;
 
 /**
  * Created by PYOJIHYE on 2017-05-24.

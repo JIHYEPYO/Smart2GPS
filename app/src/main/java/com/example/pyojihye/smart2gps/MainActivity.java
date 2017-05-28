@@ -3,6 +3,7 @@ package com.example.pyojihye.smart2gps;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -18,6 +19,8 @@ import com.google.android.gms.location.LocationServices;
 
 import static com.example.pyojihye.smart2gps.Const.IP;
 import static com.example.pyojihye.smart2gps.Const.PORT;
+import static com.example.pyojihye.smart2gps.Const.RUN;
+import static com.example.pyojihye.smart2gps.Const.settings;
 import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,6 +32,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         editTextIP = (EditText) findViewById(R.id.editTextIP);
+        settings = getSharedPreferences(RUN,MODE_PRIVATE);
+
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putBoolean("start", false);
+        editor.commit();
     }
 
     public void onButtonConnectClicked(View v) {
